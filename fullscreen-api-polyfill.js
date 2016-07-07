@@ -64,19 +64,14 @@
 
 	function dispatch( type, target ) {
 		var event = doc.createEvent( "Event" );
-
 		event.initEvent( type, true, false );
 		target.dispatchEvent( event );
 	} // end of dispatch()
 
 	function handleChange( e ) {
+		// At this point, doc[api.element] may be null in Safari – see issue #23
 		e.stopPropagation();
 		e.stopImmediatePropagation();
-
-		// Recopy the enabled and element values
-		doc[w3.enabled] = doc[api.enabled];
-		doc[w3.element] = doc[api.element];
-
 		dispatch( w3.events.change, e.target );
 	} // end of handleChange()
 
@@ -119,9 +114,14 @@
 		doc.addEventListener( api.events.change, handleChange, false );
 		doc.addEventListener( api.events.error,  handleError,  false );
 
-		// Copy the default value
-		doc[w3.enabled] = doc[api.enabled];
-		doc[w3.element] = doc[api.element];
+		// Delegate the `fullscreenEnabled` and `fullscreenElement` properties
+		['enabled', 'element'].forEach(function(key){
+			Object.defineProperty(doc, w3[key], {
+				get: function(){
+					return doc[api[key]];
+				}
+			});
+		});
 
 		// Match the reference for exitFullscreen
 		doc[w3.exit] = function() {
